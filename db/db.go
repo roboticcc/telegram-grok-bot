@@ -18,7 +18,7 @@ type ChatHistory struct {
 }
 
 type DB struct {
-	bolt   *bolt.DB
+	Bolt   *bolt.DB
 	mu     sync.RWMutex
 	closed bool
 }
@@ -36,7 +36,7 @@ func InitDB() (*DB, error) {
 		db.Close()
 		return nil, err
 	}
-	return &DB{bolt: db}, nil
+	return &DB{Bolt: db}, nil
 }
 
 func (d *DB) Close() error {
@@ -46,7 +46,7 @@ func (d *DB) Close() error {
 		return nil
 	}
 	d.closed = true
-	return d.bolt.Close()
+	return d.Bolt.Close()
 }
 
 func (d *DB) LoadHistory(chatID int64) ([]string, error) {
@@ -54,7 +54,7 @@ func (d *DB) LoadHistory(chatID int64) ([]string, error) {
 	defer d.mu.RUnlock()
 	var history []string
 	key := []byte(fmt.Sprintf("chat_%d", chatID))
-	err := d.bolt.View(func(tx *bolt.Tx) error {
+	err := d.Bolt.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BucketName))
 		if b == nil {
 			return fmt.Errorf("bucket not found")
@@ -78,7 +78,7 @@ func (d *DB) AddToHistory(chatID int64, entry string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	key := []byte(fmt.Sprintf("chat_%d", chatID))
-	return d.bolt.Update(func(tx *bolt.Tx) error {
+	return d.Bolt.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BucketName))
 		if b == nil {
 			return fmt.Errorf("bucket not found")

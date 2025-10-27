@@ -15,9 +15,12 @@ import (
 
 	"telegram-grok-bot/db"
 
+	"github.com/boltdb/bolt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gopkg.in/yaml.v3"
 )
+
+const MaxContextMessages = 8
 
 type Config struct {
 	Bot struct {
@@ -97,8 +100,15 @@ func callGrokAPI(prompt string, contextHistory []string) (string, error) {
 	messages := []Message{
 		{Role: "system", Content: "You are Grok, a helpful AI built by xAI."},
 	}
-	for _, hist := range contextHistory {
-		messages = append(messages, Message{Role: "assistant", Content: hist})
+
+	start := len(contextHistory)
+	if start > MaxContextMessages-1 {
+		start = MaxContextMessages - 1
+	}
+	recent := contextHistory[len(contextHistory)-start:]
+
+	for _, h := range recent {
+		messages = append(messages, Message{Role: "assistant", Content: h})
 	}
 	messages = append(messages, Message{Role: "user", Content: prompt})
 
@@ -173,7 +183,30 @@ func addToHistory(chatID int64, response string) {
 	err := getDB().AddToHistory(chatID, response)
 	if err != nil {
 		log.Printf("Error saving history: %v", err)
+		return
 	}
+
+	history, err := getDB().LoadHistory(chatID)
+	if err != nil {
+		return
+	}
+
+	if len(history) > MaxContextMessages {
+		newHistory := history[len(history)-MaxContextMessages:]
+		getDB().bolt.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte("chat_history"))
+			key := []byte(fmt.Sprintf("chat_%d", chatID))
+			data, _ := json.Marshal(db.ChatHistory{History: newHistory})
+			return b.Put(key, data)
+		})
+	}
+}
+
+func clearHistory(chatID int64) {
+	getDB().bolt.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("chat_history"))
+		return b.Delete([]byte(fmt.Sprintf("chat_%d", chatID)))
+	})
 }
 
 func main() {
@@ -210,6 +243,12 @@ func main() {
 			continue
 		}
 
+		if strings.HasPrefix(text, "/forget") {
+			clearHistory(chatID)
+			bot.Send(tgbotapi.NewMessage(chatID, "Контекст очищен."))
+			continue
+		}
+
 		isReplyToBot := false
 		var originalBotMsg string
 		if msg.ReplyToMessage != nil && msg.ReplyToMessage.From.ID == bot.Self.ID {
@@ -223,11 +262,18 @@ func main() {
 			continue
 		}
 
+		// КЛЮЧЕВАЯ ЛОГИКА:
+		// Если это упоминание @bot — сбрасываем контекст
+		if isMention && !isReplyToBot {
+			clearHistory(chatID)
+		}
+
 		history := getChatHistory(chatID)
 		prompt := text
+
+		// Если это ответ на сообщение бота — добавляем контекст
 		if isReplyToBot && originalBotMsg != "" {
 			prompt = fmt.Sprintf("Предыдущий ответ: %s\nНовый вопрос: %s", originalBotMsg, text)
-			addToHistory(chatID, originalBotMsg)
 		}
 
 		placeholderText := waitingMessages[rand.Intn(len(waitingMessages))]
