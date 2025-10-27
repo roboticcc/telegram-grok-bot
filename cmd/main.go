@@ -193,7 +193,7 @@ func addToHistory(chatID int64, response string) {
 
 	if len(history) > MaxContextMessages {
 		newHistory := history[len(history)-MaxContextMessages:]
-		getDB().bolt.Update(func(tx *bolt.Tx) error {
+		getDB().Bolt.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte("chat_history"))
 			key := []byte(fmt.Sprintf("chat_%d", chatID))
 			data, _ := json.Marshal(db.ChatHistory{History: newHistory})
@@ -203,7 +203,7 @@ func addToHistory(chatID int64, response string) {
 }
 
 func clearHistory(chatID int64) {
-	getDB().bolt.Update(func(tx *bolt.Tx) error {
+	getDB().Bolt.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("chat_history"))
 		return b.Delete([]byte(fmt.Sprintf("chat_%d", chatID)))
 	})
