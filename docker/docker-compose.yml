@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  grok-bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: telegram-grok-bot
+    restart: unless-stopped
+    volumes:
+      - ../data:/data
+      - ../config/config.yaml:/app/config/config.yaml:ro
+    working_dir: /app
