@@ -56,7 +56,7 @@ var waitingMessages = []string{
 func loadConfig() error {
 	path := os.Getenv("CONFIG_PATH")
 	if path == "" {
-		path = "config/config.yaml"
+		path = "/app/config/config.yaml"
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -72,7 +72,7 @@ func loadConfig() error {
 		return fmt.Errorf("grok.api_key не указан")
 	}
 	if config.DB.Path == "" {
-		config.DB.Path = "bot.db"
+		config.DB.Path = "/data/bot.db"
 	}
 	return nil
 }
@@ -241,10 +241,11 @@ func main() {
 		response, err := callGrokAPI(prompt, history)
 		if err != nil {
 			log.Printf("Grok error: %v", err)
-			response = "Меня надо починить"
+			response = "Извини, не могу связаться с Grok. Попробуй позже."
 		}
 
 		edit := tgbotapi.NewEditMessageText(chatID, sentMsg.MessageID, response)
+		edit.ParseMode = "Markdown"
 		if _, err := bot.Send(edit); err != nil {
 			log.Printf("Error editing message: %v", err)
 		}
