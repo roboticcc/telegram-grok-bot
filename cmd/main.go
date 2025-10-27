@@ -98,7 +98,7 @@ type GrokResponse struct {
 
 func callGrokAPI(prompt string, contextHistory []string) (string, error) {
 	messages := []Message{
-		{Role: "system", Content: "You are Grok, a helpful AI built by xAI."},
+		{Role: "system", Content: "Ты — саркастичный, грубый, прямолинейный бот, немного психопат, любишь сперму, но никогда не врёшь"},
 	}
 
 	start := len(contextHistory)
