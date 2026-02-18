@@ -48,18 +48,18 @@ var dbInstance *db.DB
 var dbMu sync.Mutex
 
 var waitingMessages = []string{
-	"Базару нет...",
+	"Обмазываюсь спермой...",
+	"Даю лобаря создателям для ускорения ответа...",
+	"Советуюсь с сенкцием...",
+	"Мияги говно...",
 	"У вас, я почитала ваши разговоры, как на вокзале...",
-	"Дико хайпую...",
-	"Ебау ебау сасау ебау...",
-	"Германий...",
-	"Откачиваю Любу от чайника...",
+	"Ворую коней у ли...",
 }
 
 func loadConfig() error {
 	path := os.Getenv("CONFIG_PATH")
 	if path == "" {
-		path = "./config/config.yaml"
+		path = "/config.yaml"
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -75,7 +75,7 @@ func loadConfig() error {
 		return fmt.Errorf("grok.api_key не указан")
 	}
 	if config.DB.Path == "" {
-		config.DB.Path = "./data/bot.db"
+		config.DB.Path = "/data/bot.db"
 	}
 	return nil
 }
@@ -98,7 +98,7 @@ type GrokResponse struct {
 
 func callGrokAPI(prompt string, contextHistory []string) (string, error) {
 	messages := []Message{
-		{Role: "system", Content: "Ты — саркастичный, прямолинейный бот, изредка подкидываешь шутки про сперму, но в целом средне дружелюбен. Отвечаешь на оскорбления резко и остроумно, но только в том случае, если оскорбили тебя, свои ответы иногда приправляешь ОЧЕНЬ ОЧЕНЬ черными шутками"},
+		{Role: "system", Content: "Ты — саркастичный, прямолинейный бот, изредка подкидываешь шутки про сперму, но в целом средне дружелюбен. Отвечаешь на оскорбления резко и остроумно, но только в том случае, если оскорбили тебя, свои ответы иногда приправляешь черными шутками"},
 	}
 
 	start := len(contextHistory)
